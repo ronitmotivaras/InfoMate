@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { sendChatMessage } from './services/chatService';
 import { 
   Mic, 
   MicOff, 
@@ -335,51 +336,7 @@ const InfoMate = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const processQuery = (query) => {
-    const lowerQuery = query.toLowerCase();
-    
-    if (lowerQuery.includes('faculty') || lowerQuery.includes('teacher') || lowerQuery.includes('professor') || lowerQuery.includes('staff')) {
-      return `👨‍🏫 **Faculty Members - ICT Department**\n\n${departmentData.faculty.map(f => 
-        `**${f.name}**\n• Position: ${f.designation}\n• Specialization: ${f.specialization}\n• Experience: ${f.experience}\n• Email: ${f.email}\n`
-      ).join('\n')}`;
-    }
-    
-    if (lowerQuery.includes('course') || lowerQuery.includes('program') || lowerQuery.includes('degree') || lowerQuery.includes('curriculum')) {
-      return `📚 **Courses Offered - ICT Department**\n\n${departmentData.courses.map(c => 
-        `**${c.name}**\n• Duration: ${c.duration}\n• Type: ${c.type}\n• Annual Intake: ${c.intake}\n`
-      ).join('\n')}`;
-    }
-    
-    if (lowerQuery.includes('facility') || lowerQuery.includes('lab') || lowerQuery.includes('infrastructure') || lowerQuery.includes('campus')) {
-      return `🏢 **Department Facilities**\n\n${departmentData.facilities.map(f => 
-        `**${f.name}**\n${f.description}\n`
-      ).join('\n')}`;
-    }
-    
-    if (lowerQuery.includes('event') || lowerQuery.includes('activity') || lowerQuery.includes('fest') || lowerQuery.includes('competition')) {
-      return `📅 **Events & Activities**\n\n${departmentData.events.map(e => 
-        `**${e.name}** (${e.type})\n• Date: ${e.date}\n• Description: ${e.description}\n`
-      ).join('\n')}`;
-    }
-    
-    if (lowerQuery.includes('admission') || lowerQuery.includes('entry') || lowerQuery.includes('eligibility') || lowerQuery.includes('apply')) {
-      return `🎓 **Admission Information**\n\nFor detailed admission information:\n• Visit our official website: www.marwadiuniversity.ac.in\n• Contact Admission Office: +91-2822-267700\n• Email: admissions@marwadiuniversity.ac.in\n\n**Available Programs:**\n• B.Tech IT (4 years) - 120 seats\n• BCA (3 years) - 80 seats\n• MCA (2 years) - 60 seats\n• M.Tech CSE (2 years) - 30 seats\n\n**Eligibility varies by program. Please check our website for detailed requirements.**`;
-    }
-    
-    if (lowerQuery.includes('contact') || lowerQuery.includes('phone') || lowerQuery.includes('email') || lowerQuery.includes('address')) {
-      return `📞 **Contact Information**\n\n**ICT Department**\nMarwadi University\nRajkot - Morbi Highway, Rajkot\nGujarat 360003, India\n\n**Phone:** +91-2822-267700\n**Email:** ict@marwadiuniversity.ac.in\n**Website:** www.marwadiuniversity.ac.in\n\n**Office Hours:** Monday - Saturday, 9:00 AM - 5:00 PM`;
-    }
-    
-    if (lowerQuery.includes('hello') || lowerQuery.includes('hi') || lowerQuery.includes('hey') || lowerQuery.includes('good')) {
-      return `👋 Hello there! I'm InfoMate, your friendly ICT Department assistant.\n\nI'm here to help you with information about:\n• Faculty and staff details\n• Course programs and curriculum\n• Campus facilities and infrastructure\n• Upcoming events and activities\n• Admission procedures and requirements\n\nWhat would you like to know more about?`;
-    }
-    
-    if (lowerQuery.includes('help') || lowerQuery.includes('what can you do') || lowerQuery.includes('capabilities')) {
-      return `🤖 **How I can help you:**\n\n• **Faculty Info**: Get details about professors, their specializations, and contact information\n• **Courses**: Learn about degree programs, duration, and eligibility\n• **Facilities**: Discover campus infrastructure, labs, and resources\n• **Events**: Stay updated on tech fests, competitions, and workshops\n• **Admissions**: Get information about application procedures and requirements\n• **Contact**: Find department contact details and office hours\n\n**Tips:**\n• You can type or use voice input (click the microphone)\n• Ask specific questions for detailed information\n• I can speak responses aloud for you\n\nTry asking: "Tell me about faculty" or "What courses do you offer?"`;
-    }
-    
-    return `🤔 I'd be happy to help you with information about the ICT Department!\n\nI can provide details about:\n• 👨‍🏫 **Faculty** - professors and their specializations\n• 📚 **Courses** - degree programs and curriculum\n• 🏢 **Facilities** - labs and infrastructure\n• 📅 **Events** - tech fests and activities\n• 🎓 **Admissions** - application procedures\n• 📞 **Contact** - department contact information\n\nCould you please be more specific about what you'd like to know? For example, you could ask:\n- "Tell me about the faculty"\n- "What courses do you offer?"\n- "What facilities are available?"`;
-  };
+  // Removed local rules; defers to backend grounded in PDF via Gemini
 
   const handleSpeechStart = () => {
     setIsListening(true);
@@ -416,27 +373,40 @@ const InfoMate = () => {
     setInputText('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      const response = processQuery(messageText);
-      
+    try {
+      // Prepare minimal chat history for better context
+      const history = messages.slice(-6).map(m => ({
+        role: m.sender === 'user' ? 'user' : 'model',
+        content: m.text,
+      }));
+
+      const { answer } = await sendChatMessage(messageText, history);
+
       const botMessage = {
         id: Date.now() + 1,
-        text: response,
+        text: answer,
         sender: 'bot',
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, botMessage]);
       setIsLoading(false);
-      
+
       setIsSpeaking(true);
-      const cleanResponse = response.replace(/[*#•]/g, '').replace(/\n/g, ' ');
-      speechService.speak(cleanResponse);
-      
-      setTimeout(() => {
-        setIsSpeaking(false);
-      }, cleanResponse.length * 50);
-    }, 1500);
+      const cleanResponse = (answer || '').replace(/[*#•]/g, '').replace(/\n/g, ' ');
+      if (cleanResponse) speechService.speak(cleanResponse);
+      setTimeout(() => setIsSpeaking(false), Math.min(15000, cleanResponse.length * 50));
+    } catch (err) {
+      console.error('Chat error:', err);
+      setIsLoading(false);
+      const botMessage = {
+        id: Date.now() + 1,
+        text: 'Sorry, I ran into a problem answering that. Please try again shortly.',
+        sender: 'bot',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, botMessage]);
+    }
   };
 
   const handleKeyPress = (e) => {
