@@ -18,7 +18,15 @@ import {
   Sparkles,
   Copy,
   ThumbsUp,
-  ThumbsDown
+  ThumbsDown,
+  ArrowLeft,
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  GraduationCap,
+  BookOpenCheck,
+  ChevronRight
 } from 'lucide-react';
 
 // Speech Service Class
@@ -77,43 +85,424 @@ class SpeechService {
   }
 }
 
-// Sample department data (this will come from Firebase)
-const departmentData = {
-  faculty: [
-    { name: "Dr. Rajesh Patel", designation: "HOD & Professor", specialization: "AI & Machine Learning", email: "rajesh.patel@marwadiuniversity.ac.in", experience: "15 years" },
-    { name: "Prof. Priya Shah", designation: "Associate Professor", specialization: "Web Development & UI/UX", email: "priya.shah@marwadiuniversity.ac.in", experience: "10 years" },
-    { name: "Dr. Amit Kumar", designation: "Assistant Professor", specialization: "Database Systems & Cloud Computing", email: "amit.kumar@marwadiuniversity.ac.in", experience: "8 years" },
-    { name: "Prof. Sneha Desai", designation: "Assistant Professor", specialization: "Cybersecurity & Network Programming", email: "sneha.desai@marwadiuniversity.ac.in", experience: "6 years" }
-  ],
-  courses: [
-    { name: "Bachelor of Technology in Information Technology", duration: "4 years", type: "Undergraduate", intake: "120 students" },
-    { name: "Master of Computer Applications", duration: "2 years", type: "Postgraduate", intake: "60 students" },
-    { name: "Bachelor of Computer Applications", duration: "3 years", type: "Undergraduate", intake: "80 students" },
-    { name: "M.Tech in Computer Science & Engineering", duration: "2 years", type: "Postgraduate", intake: "30 students" }
-  ],
-  facilities: [
-    { name: "Advanced Computer Labs", description: "5 state-of-the-art computer labs with 200+ high-end systems" },
-    { name: "High-Speed Internet", description: "1 Gbps dedicated internet connectivity throughout campus" },
-    { name: "Smart Classrooms", description: "15 smart classrooms with interactive whiteboards and projectors" },
-    { name: "Research Lab", description: "Dedicated research facility for AI, ML, and IoT projects" },
-    { name: "Digital Library", description: "Access to 10,000+ e-books and research papers" },
-    { name: "Innovation Hub", description: "Startup incubation center and project development space" }
-  ],
-  events: [
-    { name: "TechnoVanza 2024", type: "Annual Tech Fest", date: "March 15-17, 2024", description: "Coding competitions, hackathons, and tech exhibitions" },
-    { name: "CodeWars", type: "Programming Contest", date: "Monthly", description: "Inter-college programming competitions" },
-    { name: "Industry Connect", type: "Guest Lectures", date: "Weekly", description: "Sessions by industry experts and professionals" },
-    { name: "Innovation Showcase", type: "Project Exhibition", date: "December 2024", description: "Student project presentations and demonstrations" }
-  ]
-};
-
 const speechService = new SpeechService();
 
-// Sidebar Component - Updated with click handlers and removed Facilities/Events
+// API Service for fetching dynamic data
+const apiService = {
+  async fetchFaculty() {
+    try {
+      // Replace with your actual API endpoint
+      const response = await fetch('/api/faculty');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching faculty:', error);
+      return [];
+    }
+  },
+
+  async fetchCourses() {
+    try {
+      // Replace with your actual API endpoint
+      const response = await fetch('/api/courses');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+      return [];
+    }
+  },
+
+  async fetchSemesters(courseId) {
+    try {
+      // Replace with your actual API endpoint
+      const response = await fetch(`/api/courses/${courseId}/semesters`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching semesters:', error);
+      return [];
+    }
+  },
+
+  async fetchSubjects(courseId, semesterId) {
+    try {
+      // Replace with your actual API endpoint
+      const response = await fetch(`/api/courses/${courseId}/semesters/${semesterId}/subjects`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching subjects:', error);
+      return [];
+    }
+  }
+};
+
+// Faculty Card Component
+const FacultyCard = ({ faculty }) => (
+  <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200">
+    <div className="flex items-start space-x-4">
+      <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
+        {faculty.name?.charAt(0) || 'F'}
+      </div>
+      <div className="flex-1">
+        <h3 className="text-xl font-semibold text-gray-800">{faculty.name}</h3>
+        <p className="text-blue-600 font-medium">{faculty.designation}</p>
+        <p className="text-gray-600 mt-1">{faculty.specialization}</p>
+        
+        <div className="mt-4 space-y-2">
+          {faculty.email && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Mail size={16} />
+              <span className="text-sm">{faculty.email}</span>
+            </div>
+          )}
+          {faculty.phone && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Phone size={16} />
+              <span className="text-sm">{faculty.phone}</span>
+            </div>
+          )}
+          {faculty.experience && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Clock size={16} />
+              <span className="text-sm">{faculty.experience}</span>
+            </div>
+          )}
+          {faculty.office && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <MapPin size={16} />
+              <span className="text-sm">{faculty.office}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Faculty View Component
+const FacultyView = ({ onBack }) => {
+  const [faculty, setFaculty] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadFaculty = async () => {
+      setLoading(true);
+      const data = await apiService.fetchFaculty();
+      setFaculty(data);
+      setLoading(false);
+    };
+    loadFaculty();
+  }, []);
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 p-6">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onBack}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Faculty Members</h1>
+            <p className="text-gray-600">ICT Department Faculty Information</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-6">
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white border border-gray-200 rounded-xl p-6 animate-pulse">
+                <div className="flex items-start space-x-4">
+                  <div className="w-16 h-16 bg-gray-300 rounded-full"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                    <div className="h-3 bg-gray-300 rounded w-2/3"></div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {faculty.map((member, index) => (
+              <FacultyCard key={member.id || index} faculty={member} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Course Card Component
+const CourseCard = ({ course, onClick }) => (
+  <div 
+    onClick={() => onClick(course)}
+    className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
+  >
+    <div className="flex items-center justify-between">
+      <div className="flex-1">
+        <h3 className="text-xl font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
+          {course.name}
+        </h3>
+        <p className="text-gray-600 mt-1">{course.type}</p>
+        <div className="mt-4 space-y-2">
+          {course.duration && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Clock size={16} />
+              <span className="text-sm">{course.duration}</span>
+            </div>
+          )}
+          {course.intake && (
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Users size={16} />
+              <span className="text-sm">{course.intake}</span>
+            </div>
+          )}
+        </div>
+      </div>
+      <ChevronRight size={20} className="text-gray-400 group-hover:text-blue-600 transition-colors" />
+    </div>
+  </div>
+);
+
+// Semester View Component
+const SemesterView = ({ course, onBack, onSemesterClick }) => {
+  const [semesters, setSemesters] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadSemesters = async () => {
+      setLoading(true);
+      const data = await apiService.fetchSemesters(course.id);
+      setSemesters(data);
+      setLoading(false);
+    };
+    loadSemesters();
+  }, [course.id]);
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 p-6">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onBack}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">{course.name}</h1>
+            <p className="text-gray-600">Select Semester</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-6">
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+                <div className="h-6 bg-gray-300 rounded mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {semesters.map((semester) => (
+              <div
+                key={semester.id}
+                onClick={() => onSemesterClick(semester)}
+                className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
+              >
+                <div className="text-center">
+                  <GraduationCap size={32} className="mx-auto text-blue-500 mb-2" />
+                  <h3 className="text-lg font-semibold text-gray-800 group-hover:text-blue-600 transition-colors">
+                    {semester.name}
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {semester.subjectCount || 0} subjects
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Subject View Component
+const SubjectView = ({ course, semester, onBack }) => {
+  const [subjects, setSubjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadSubjects = async () => {
+      setLoading(true);
+      const data = await apiService.fetchSubjects(course.id, semester.id);
+      setSubjects(data);
+      setLoading(false);
+    };
+    loadSubjects();
+  }, [course.id, semester.id]);
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 p-6">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onBack}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">{semester.name}</h1>
+            <p className="text-gray-600">{course.name} - Subjects</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-6">
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white border border-gray-200 rounded-xl p-6 animate-pulse">
+                <div className="h-6 bg-gray-300 rounded mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {subjects.map((subject) => (
+              <div key={subject.id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <div className="flex items-start space-x-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
+                    <BookOpenCheck size={20} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-800">{subject.name}</h3>
+                    {subject.code && (
+                      <p className="text-blue-600 font-medium text-sm">{subject.code}</p>
+                    )}
+                    {subject.credits && (
+                      <p className="text-gray-600 text-sm mt-1">{subject.credits} Credits</p>
+                    )}
+                    {subject.type && (
+                      <p className="text-gray-600 text-sm">{subject.type}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Courses View Component
+const CoursesView = ({ onBack }) => {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedSemester, setSelectedSemester] = useState(null);
+
+  useEffect(() => {
+    const loadCourses = async () => {
+      setLoading(true);
+      const data = await apiService.fetchCourses();
+      setCourses(data);
+      setLoading(false);
+    };
+    loadCourses();
+  }, []);
+
+  if (selectedSemester) {
+    return (
+      <SubjectView 
+        course={selectedCourse}
+        semester={selectedSemester}
+        onBack={() => setSelectedSemester(null)}
+      />
+    );
+  }
+
+  if (selectedCourse) {
+    return (
+      <SemesterView 
+        course={selectedCourse}
+        onBack={() => setSelectedCourse(null)}
+        onSemesterClick={setSelectedSemester}
+      />
+    );
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 p-6">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onBack}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">Courses</h1>
+            <p className="text-gray-600">ICT Department Courses</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-6">
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white border border-gray-200 rounded-xl p-6 animate-pulse">
+                <div className="h-6 bg-gray-300 rounded mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {courses.map((course) => (
+              <CourseCard 
+                key={course.id} 
+                course={course} 
+                onClick={setSelectedCourse}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Sidebar Component
 const Sidebar = ({ isOpen, onToggle, chatHistory, onNewChat, onSelectChat, onQuickAction }) => {
-  // Updated sidebar items - removed facilities and events
   const sidebarItems = [
-    { icon: MessageSquare, label: "Faculty Info", category: "faculty" },
+    { icon: Users, label: "Faculty Info", category: "faculty" },
     { icon: BookOpen, label: "Courses", category: "courses" }
   ];
 
@@ -304,7 +693,7 @@ const MessageBubble = ({ message, onCopy, onFeedback }) => {
   );
 };
 
-// Main InfoMate Component - Updated with quick action handler
+// Main InfoMate Component
 const InfoMate = () => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -313,6 +702,7 @@ const InfoMate = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [chatHistory] = useState([]);
+  const [currentView, setCurrentView] = useState('chat'); // 'chat', 'faculty', 'courses'
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -340,19 +730,16 @@ const InfoMate = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Handle quick actions from sidebar
   const handleQuickAction = (category) => {
-    let message = '';
-    
     if (category === 'faculty') {
-      message = 'Tell me about the faculty members in the ICT department.';
+      setCurrentView('faculty');
     } else if (category === 'courses') {
-      message = 'What courses are offered by the ICT department?';
+      setCurrentView('courses');
     }
-    
-    if (message) {
-      handleSendMessage(message);
-    }
+  };
+
+  const handleBackToChat = () => {
+    setCurrentView('chat');
   };
 
   const handleSpeechStart = () => {
@@ -434,12 +821,134 @@ const InfoMate = () => {
   };
 
   const handleNewChat = () => {
+    setCurrentView('chat');
     setMessages([{
       id: Date.now(),
       text: `👋 New chat started! I'm InfoMate, ready to help you with ICT Department information.\n\nWhat would you like to know about?`,
       sender: 'bot',
       timestamp: new Date()
     }]);
+  };
+
+  // Render different views based on currentView state
+  const renderMainContent = () => {
+    switch (currentView) {
+      case 'faculty':
+        return <FacultyView onBack={handleBackToChat} />;
+      case 'courses':
+        return <CoursesView onBack={handleBackToChat} />;
+      default:
+        return (
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Chat Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+                >
+                  <Menu size={20} />
+                </button>
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <Sparkles size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <h1 className="font-semibold text-gray-800">InfoMate</h1>
+                    <p className="text-xs text-gray-500">ICT Department Assistant</p>
+                  </div>
+                </div>
+              </div>
+              
+              {isSpeaking && (
+                <div className="flex items-center space-x-2 px-3 py-1 bg-green-50 text-green-700 rounded-full">
+                  <Volume2 size={16} className="animate-pulse" />
+                  <span className="text-sm font-medium">Speaking...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Messages Container */}
+            <div className="flex-1 overflow-y-auto">
+              {messages.map((message) => (
+                <MessageBubble 
+                  key={message.id} 
+                  message={message}
+                  onCopy={() => console.log('Copied!')}
+                  onFeedback={(type) => console.log('Feedback:', type)}
+                />
+              ))}
+              
+              {isLoading && (
+                <div className="flex gap-4 px-4 py-6 bg-gray-50">
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                    <Sparkles size={16} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-sm text-gray-800 mb-2">InfoMate</div>
+                    <div className="flex items-center space-x-2">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
+                      <span className="text-sm text-gray-500">Thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="border-t border-gray-200 bg-white p-4">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-end space-x-3">
+                  <div className="flex-1 relative">
+                    <textarea
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Message InfoMate..."
+                      className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none max-h-32"
+                      rows={1}
+                      disabled={isLoading}
+                      style={{ minHeight: '52px' }}
+                    />
+                    <button
+                      onClick={isListening ? handleSpeechStop : handleSpeechStart}
+                      className={`absolute right-3 top-3 p-2 rounded-lg transition-all duration-200 ${
+                        isListening 
+                          ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      disabled={isLoading}
+                      title={isListening ? 'Stop listening' : 'Start voice input'}
+                    >
+                      {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                    </button>
+                  </div>
+                  
+                  <button
+                    onClick={() => handleSendMessage()}
+                    className="p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!inputText.trim() || isLoading}
+                    title="Send message"
+                  >
+                    <Send size={20} />
+                  </button>
+                </div>
+                
+                <div className="mt-2 text-center">
+                  <p className="text-xs text-gray-500">
+                    InfoMate can make mistakes. Consider checking important information.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+    }
   };
 
   return (
@@ -455,114 +964,7 @@ const InfoMate = () => {
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
-            >
-              <Menu size={20} />
-            </button>
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Sparkles size={16} className="text-white" />
-              </div>
-              <div>
-                <h1 className="font-semibold text-gray-800">InfoMate</h1>
-                <p className="text-xs text-gray-500">ICT Department Assistant</p>
-              </div>
-            </div>
-          </div>
-          
-          {isSpeaking && (
-            <div className="flex items-center space-x-2 px-3 py-1 bg-green-50 text-green-700 rounded-full">
-              <Volume2 size={16} className="animate-pulse" />
-              <span className="text-sm font-medium">Speaking...</span>
-            </div>
-          )}
-        </div>
-
-        {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto">
-          {messages.map((message) => (
-            <MessageBubble 
-              key={message.id} 
-              message={message}
-              onCopy={() => console.log('Copied!')}
-              onFeedback={(type) => console.log('Feedback:', type)}
-            />
-          ))}
-          
-          {isLoading && (
-            <div className="flex gap-4 px-4 py-6 bg-gray-50">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
-                <Sparkles size={16} className="text-white" />
-              </div>
-              <div className="flex-1">
-                <div className="font-semibold text-sm text-gray-800 mb-2">InfoMate</div>
-                <div className="flex items-center space-x-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                  </div>
-                  <span className="text-sm text-gray-500">Thinking...</span>
-                </div>
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Area */}
-        <div className="border-t border-gray-200 bg-white p-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-end space-x-3">
-              <div className="flex-1 relative">
-                <textarea
-                  value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Message InfoMate..."
-                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none max-h-32"
-                  rows={1}
-                  disabled={isLoading}
-                  style={{ minHeight: '52px' }}
-                />
-                <button
-                  onClick={isListening ? handleSpeechStop : handleSpeechStart}
-                  className={`absolute right-3 top-3 p-2 rounded-lg transition-all duration-200 ${
-                    isListening 
-                      ? 'bg-red-500 hover:bg-red-600 text-white animate-pulse' 
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  disabled={isLoading}
-                  title={isListening ? 'Stop listening' : 'Start voice input'}
-                >
-                  {isListening ? <MicOff size={18} /> : <Mic size={18} />}
-                </button>
-              </div>
-              
-              <button
-                onClick={() => handleSendMessage()}
-                className="p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!inputText.trim() || isLoading}
-                title="Send message"
-              >
-                <Send size={20} />
-              </button>
-            </div>
-            
-            <div className="mt-2 text-center">
-              <p className="text-xs text-gray-500">
-                InfoMate can make mistakes. Consider checking important information.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      {renderMainContent()}
     </div>
   );
 };
