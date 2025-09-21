@@ -109,14 +109,17 @@ const departmentData = {
 
 const speechService = new SpeechService();
 
-// Sidebar Component
-const Sidebar = ({ isOpen, onToggle, chatHistory, onNewChat, onSelectChat }) => {
+// Sidebar Component - Updated with click handlers and removed Facilities/Events
+const Sidebar = ({ isOpen, onToggle, chatHistory, onNewChat, onSelectChat, onQuickAction }) => {
+  // Updated sidebar items - removed facilities and events
   const sidebarItems = [
     { icon: MessageSquare, label: "Faculty Info", category: "faculty" },
-    { icon: BookOpen, label: "Courses", category: "courses" },
-    { icon: Building, label: "Facilities", category: "facilities" },
-    { icon: Calendar, label: "Events", category: "events" }
+    { icon: BookOpen, label: "Courses", category: "courses" }
   ];
+
+  const handleQuickActionClick = (category) => {
+    onQuickAction(category);
+  };
 
   return (
     <>
@@ -180,6 +183,7 @@ const Sidebar = ({ isOpen, onToggle, chatHistory, onNewChat, onSelectChat }) => 
                 {sidebarItems.map((item) => (
                   <button
                     key={item.category}
+                    onClick={() => handleQuickActionClick(item.category)}
                     className="w-full flex items-center space-x-3 p-2 hover:bg-gray-800 rounded-lg transition-colors text-left"
                   >
                     <item.icon size={16} className="text-gray-400" />
@@ -300,7 +304,7 @@ const MessageBubble = ({ message, onCopy, onFeedback }) => {
   );
 };
 
-// Main InfoMate Component
+// Main InfoMate Component - Updated with quick action handler
 const InfoMate = () => {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState('');
@@ -316,7 +320,7 @@ const InfoMate = () => {
     
     const welcomeMessage = {
       id: 1,
-      text: `👋 Hello! I'm InfoMate, your intelligent ICT Department assistant at Marwadi University.\n\nI can help you with:\n• 👨‍🏫 Faculty information and contact details\n• 📚 Course details and curriculum\n• 🏢 Campus facilities and labs\n• 📅 Events and activities\n• 🎓 Admission procedures\n\n${!isSupported ? '⚠️ Note: Speech recognition is not supported in your browser.' : '🎤 You can type or speak to me!'}\n\nHow can I assist you today?`,
+      text: `👋 Hello! I'm InfoMate, your intelligent ICT Department assistant at Marwadi University.\n\nI can help you with:\n• 👨‍🏫 Faculty information and contact details\n• 📚 Course details and curriculum\n• 🎓 Admission procedures\n\n${!isSupported ? '⚠️ Note: Speech recognition is not supported in your browser.' : '🎤 You can type or speak to me!'}\n\nHow can I assist you today?`,
       sender: 'bot',
       timestamp: new Date()
     };
@@ -336,7 +340,20 @@ const InfoMate = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Removed local rules; defers to backend grounded in PDF via Gemini
+  // Handle quick actions from sidebar
+  const handleQuickAction = (category) => {
+    let message = '';
+    
+    if (category === 'faculty') {
+      message = 'Tell me about the faculty members in the ICT department.';
+    } else if (category === 'courses') {
+      message = 'What courses are offered by the ICT department?';
+    }
+    
+    if (message) {
+      handleSendMessage(message);
+    }
+  };
 
   const handleSpeechStart = () => {
     setIsListening(true);
@@ -434,6 +451,7 @@ const InfoMate = () => {
         chatHistory={chatHistory}
         onNewChat={handleNewChat}
         onSelectChat={() => {}}
+        onQuickAction={handleQuickAction}
       />
 
       {/* Main Content */}
