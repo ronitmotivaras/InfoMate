@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { sendChatMessage } from './services/chatService';
+import ChatInterface from './components/ChatInterface';
 import { 
   Mic, 
   MicOff, 
@@ -9,7 +10,6 @@ import {
   User, 
   Plus, 
   Menu,
-  Settings,
   MessageSquare,
   BookOpen,
   Users,
@@ -603,17 +603,6 @@ const Sidebar = ({ isOpen, onToggle, chatHistory, onNewChat, onSelectChat, onQui
               </>
             )}
           </div>
-
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-800">
-            <button className={`
-              w-full flex items-center space-x-3 p-2 hover:bg-gray-800 rounded-lg transition-colors
-              ${!isOpen ? 'lg:justify-center' : ''}
-            `}>
-              <Settings size={18} className="text-gray-400" />
-              {(isOpen) && <span className="text-sm">Settings</span>}
-            </button>
-          </div>
         </div>
       </div>
     </>
@@ -695,7 +684,26 @@ const MessageBubble = ({ message, onCopy, onFeedback }) => {
 
 // Main InfoMate Component
 const InfoMate = () => {
-  const [messages, setMessages] = useState([]);
+  // Initialize messages from sessionStorage or default welcome message
+  const initializeMessages = () => {
+    const savedMessages = sessionStorage.getItem('infomate_messages');
+    if (savedMessages) {
+      try {
+        const parsedMessages = JSON.parse(savedMessages);
+        // Convert timestamp strings back to Date objects
+        return parsedMessages.map(msg => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+      } catch (error) {
+        console.error('Error parsing saved messages:', error);
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const [messages, setMessages] = useState(initializeMessages);
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -706,24 +714,37 @@ const InfoMate = () => {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    const isSupported = speechService.initializeSpeechRecognition();
-    
-    const welcomeMessage = {
-      id: 1,
-      text: `👋 Hello! I'm InfoMate, your intelligent ICT Department assistant at Marwadi University.\n\nI can help you with:\n• 👨‍🏫 Faculty information and contact details\n• 📚 Course details and curriculum\n• 🎓 Admission procedures\n\n${!isSupported ? '⚠️ Note: Speech recognition is not supported in your browser.' : '🎤 You can type or speak to me!'}\n\nHow can I assist you today?`,
-      sender: 'bot',
-      timestamp: new Date()
-    };
-    
-    setMessages([welcomeMessage]);
-    
-    setTimeout(() => {
-      speechService.speak("Hello! I'm InfoMate, your ICT Department assistant. How can I help you today?");
-    }, 1000);
+    // Only show welcome message if there are no saved messages
+    if (messages.length === 0) {
+      const isSupported = speechService.initializeSpeechRecognition();
+      
+      const welcomeMessage = {
+        id: 1,
+        text: `👋 Hello! I'm InfoMate, your intelligent ICT Department assistant at Marwadi University.\n\nI can help you with:\n• 👨‍🏫 Faculty information and contact details\n• 📚 Course details and curriculum\n• 🎓 Admission procedures\n\n${!isSupported ? '⚠️ Note: Speech recognition is not supported in your browser.' : '🎤 You can type or speak to me!'}\n\nHow can I assist you today?`,
+        sender: 'bot',
+        timestamp: new Date()
+      };
+      
+      setMessages([welcomeMessage]);
+      
+      setTimeout(() => {
+        speechService.speak("Hello! I'm InfoMate, your ICT Department assistant. How can I help you today?");
+      }, 1000);
+    } else {
+      // Initialize speech service even if we have saved messages
+      speechService.initializeSpeechRecognition();
+    }
   }, []);
 
   useEffect(() => {
     scrollToBottom();
+  }, [messages]);
+
+  // Save messages to sessionStorage whenever messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      sessionStorage.setItem('infomate_messages', JSON.stringify(messages));
+    }
   }, [messages]);
 
   const scrollToBottom = () => {
@@ -821,13 +842,18 @@ const InfoMate = () => {
   };
 
   const handleNewChat = () => {
+    // Clear messages from both state and sessionStorage only when explicitly requested
+    sessionStorage.removeItem('infomate_messages');
     setCurrentView('chat');
-    setMessages([{
+    
+    const welcomeMessage = {
       id: Date.now(),
       text: `👋 New chat started! I'm InfoMate, ready to help you with ICT Department information.\n\nWhat would you like to know about?`,
       sender: 'bot',
       timestamp: new Date()
-    }]);
+    };
+    
+    setMessages([welcomeMessage]);
   };
 
   // Render different views based on currentView state
@@ -953,6 +979,7 @@ const InfoMate = () => {
 
   return (
     <div className="flex h-screen bg-white">
+      
       {/* Sidebar */}
       <Sidebar 
         isOpen={sidebarOpen}
