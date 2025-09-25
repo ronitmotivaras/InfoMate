@@ -537,7 +537,7 @@ const Sidebar = ({ isOpen, onToggle, chatHistory, onNewChat, onSelectChat, onQui
                 {(isOpen) && (
                   <div>
                     <h1 className="text-lg font-bold">InfoMate</h1>
-                    <p className="text-xs text-gray-400">ICT Assistant</p>
+                    {/* <p className="text-xs text-gray-400">ICT Assistant</p> */}
                   </div>
                 )}
               </div>

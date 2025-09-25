@@ -20,7 +20,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "proxy": "https://infomate-mzex.onrender.com",
+  "proxy": "http://localhost:5051",
   "eslintConfig": {
     "extends": [
       "react-app",
